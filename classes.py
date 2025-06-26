@@ -90,14 +90,14 @@ class Panel(object):
 
 
     @staticmethod
-    def get_panels(elements: list[TwoDElement], material: Material, bin_size: int = 3):
+    def get_panels(elements: list[TwoDElement], properties: list, material: Material, bin_size: int = 3):
         if len(elements) % bin_size != 0:
             RuntimeError("Invalid number of elements/ bin size")
             return
         out = []
         for i in range(len(elements) // bin_size):
             # TODO Hardcoded thickness
-            out.append(Panel(elements[i*3:i*3+bin_size], i, 4, material))
+            out.append(Panel(elements[i*3:i*3+bin_size], i, properties[i][0], material))
         return out
 
 
@@ -178,7 +178,7 @@ class HatSection(CrossSection):
         elif x >= 0.4:
             return 1.4 - 0.628 * x
         else:
-            RuntimeError("Invalid alpha value (no crippling possible)")
+            return 0
 
     def get_sigma_crip(self, material: Material):
         a1 = self.dim1
@@ -200,6 +200,12 @@ class HatSection(CrossSection):
 
         sigma1 = alpha1 * material.yield_strength
         sigma2 = alpha2 * material.yield_strength
+
+        b1 = b1 if sigma1 != 0 else 0
+        b2 = b2 if sigma2 != 0 else 0
+
+        if sigma1 == 0 and sigma2 == 0:
+            return material.yield_strength
 
         sigma_crip_avg = (sigma1 * 2 * b1 * t + sigma2 * b2 * t) / (2 * b1 * t + b2 * t)
         return min(sigma_crip_avg, material.yield_strength)
@@ -324,10 +330,12 @@ class Project(object):
     scale1: float
     scale2: float
     scale3: float
+    limit_mass: float
 
-    def __init__(self, matrikel, material, scale1, scale2, scale3):
+    def __init__(self, matrikel, material, scale1, scale2, scale3, limit_mass):
         self.matrikel = matrikel
         self.material = material
         self.scale1 = scale1
         self.scale2 = scale2
         self.scale3 = scale3
+        self.limit_mass = limit_mass

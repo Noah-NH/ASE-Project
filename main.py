@@ -1,39 +1,42 @@
 import datareader
 import export
 import argparse
-from fem_parser import femreader, femparser, geometry
+import shutil
+import os
+from fem_parser import femreader, femparser, geometry, femwriter
 from fem_parser.classes import *
-from tkinter.filedialog import askopenfilename, asksaveasfilename
+from tkinter.filedialog import askopenfilename, askdirectory
 
 from classes import *
 
+def copy_and_replace(source_path, destination_path):
+    pass
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    #parser.
     parser.add_argument('-n', '--nogui', default=False, action='store_true', help="run without GUI", dest='nogui')
     parser.add_argument('--input', type=str, help='Path to input project csv file')
     parser.add_argument('--stringer', type=str, help='Path to stringer stress csv file')
     parser.add_argument('--panel', type=str, help='Path to panel stress csv file')
     parser.add_argument('--fem', type=str, help='Path to fem file')
 
-    parser.add_argument('--output', type=str, help='Path to output csv file')
+    parser.add_argument('--output', type=str, help='Path to output directory')
     args = parser.parse_args()
     if not args.nogui:
         input_file = askopenfilename(title='Choose Input csv', filetypes=[('CSV Files', '*.csv')])
-        stringer_file = askopenfilename(title='Choose Stringer csv', filetypes=[('CSV Files', '*.csv')])
-        panel_file = askopenfilename(title='Choose Panel csv', filetypes=[('CSV Files', '*.csv')])
         fem_file = askopenfilename(title='Choose Input fem', filetypes=[('Optistruct FEM files', '*.fem')])
-        output_file = asksaveasfilename(title='Choose Output location', filetypes=[('CSV Files', '*.csv')])
     else:
         if not (args.input and args.stringer and args.panel and args.fem and args.output):
             parser.error("When using --nogui, the input and output files must be specified")
-        input_file = None
-        stringer_file = None
-        panel_file = None
-        fem_file = None
-        output_file = None
+        input_file = args.input
+        stringer_file = args.stringer
+        panel_file = args.panel
+        fem_file = args.fem
+        output_dir = args.output
 
     project = datareader.read_project_data(input_file)
+
+    # FEM Preprocessing
 
     fem = femreader.read_fem(fem_file)
     data = femparser.parse(fem)
@@ -50,7 +53,12 @@ if __name__ == '__main__':
     bars: list[CBar] = data["CBAR"]
 
     mass = 0
+    shell_dimensions = []
     stringer_sections = []
+    stringer_dimensions = []
+
+    for prop in shell_properties:
+        shell_dimensions.append([prop.T, prop.T / 2])
 
     for quad in quads:
         prop = [e for e in shell_properties if e.PID == quad.PID][0]
@@ -69,6 +77,16 @@ if __name__ == '__main__':
         m = area * thickness * density * 1000
         mass += m
 
+        quad.ZOFFS = thickness / 2
+
+    for prop in bar_properties:
+        if prop.TYPE == "HAT":
+            section = HatSection(prop.DIMS[0], prop.DIMS[1], prop.DIMS[2], prop.DIMS[3])
+            stringer_sections.append(section)
+            stringer_dimensions.append([prop.DIMS[0], prop.DIMS[1], prop.DIMS[2], prop.DIMS[3], -section.z_centroid])
+        else:
+            RuntimeWarning("Not implemented yet!")
+
     for bar in bars:
         prop = [e for e in bar_properties if e.PID == bar.PID][0]
         area = prop.get_area()
@@ -85,9 +103,33 @@ if __name__ == '__main__':
         mass += m
 
         if prop.TYPE == "HAT":
-            stringer_sections.append(HatSection(prop.DIMS[0], prop.DIMS[1], prop.DIMS[2], prop.DIMS[3]))
+            section = HatSection(prop.DIMS[0], prop.DIMS[1], prop.DIMS[2], prop.DIMS[3])
+
+            bar.W3A = -section.z_centroid
+            bar.W3B = -section.z_centroid
         else:
             RuntimeWarning("Not implemented yet!")
+
+    data["CQUAD4"] = quads
+    data["CBAR"] = bars
+
+    prn = femparser.print_data(data)
+
+    for key, value in prn.items():
+        fem["BULK"][key] = value
+
+
+    if not args.nogui:
+        analysis_dir = askdirectory(title='Choose Analysis location')
+
+        femwriter.print_fem(fem, f"{analysis_dir}/Output.fem", 0)
+
+        stringer_file = askopenfilename(title='Choose Stringer csv', filetypes=[('CSV Files', '*.csv'), ('all files', '*.*')])
+        panel_file = askopenfilename(title='Choose Panel csv', filetypes=[('CSV Files', '*.csv'), ('all files', '*.*')])
+        output_dir = askdirectory(title='Choose Output location')
+
+    copy_and_replace(panel_file, output_dir + "/Panel.csv")
+    copy_and_replace(stringer_file, output_dir + "/Stringer.csv")
 
     rf_strength = []
     panel_buckling = []
@@ -97,14 +139,15 @@ if __name__ == '__main__':
     for i in range(3):
         # Reading data
         stringer_elements = datareader.read_stringer_data(i+1, stringer_file)
-        panel_elements = datareader.read_panel_data(i + 1, panel_file)
+        panel_elements = datareader.read_panel_data(i+1, panel_file)
 
         # Writing strength RF
         rf_strength.append([el.get_strength_rf(project.material.ultimate_strength) for el in panel_elements] + [el.get_strength_rf(project.material.ultimate_strength) for el in stringer_elements])
 
         # Averaging elements
         stringers = Stringer.get_stringers(stringer_elements, project.material, stringer_sections)
-        panels = Panel.get_panels(panel_elements, project.material)
+
+        panels = Panel.get_panels(panel_elements, shell_dimensions, project.material)
         sections = CombinedSection.get_combined_sections(stringers, panels)
 
         # Panel buckling
@@ -132,6 +175,4 @@ if __name__ == '__main__':
 
         section_properties = [second_moment, r, lamda, lamda_crit]
 
-    print(output_file)
-
-    export.export(mass, rf_strength, panel_buckling, stringer_buckling, section_properties, input_file, output_file)
+    export.export(shell_dimensions, stringer_dimensions, mass, rf_strength, panel_buckling, stringer_buckling, section_properties, input_file, output_dir + "/results.csv")

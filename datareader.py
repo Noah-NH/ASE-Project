@@ -34,6 +34,7 @@ def read_project_data(filename) -> Project:
     Yield = 0
     Ultimate = 0
     Scales = []
+    limit_mass = 0
 
     with open(filename, newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=';', quotechar='|')
@@ -54,7 +55,9 @@ def read_project_data(filename) -> Project:
                 Scales.append(float(row[1]))
             elif row and row[0] == 'Load scale factor 3':
                 Scales.append(float(row[1]))
+            elif row and row[0] == 'limit model mass (skin and stringer) [kg]':
+                limit_mass = float(row[1])
 
     print(f'Matrikelnr: {matrikel}')
 
-    return Project(matrikel, Material(E, B, Yield, Ultimate), Scales[0], Scales[1], Scales[2])
+    return Project(matrikel, Material(E, B, Yield, Ultimate), Scales[0], Scales[1], Scales[2], limit_mass)
