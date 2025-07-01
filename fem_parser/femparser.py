@@ -256,6 +256,34 @@ def parse_pbarl(rows):
         out.append(pbarl)
     return out
 
+def parse_loadadd(rows):
+    out = []
+    for r in rows:
+        row = r[0]
+        loadadd = LoadAdd(
+            parse_nastran_integer(row[0]),
+            parse_nastran_float(row[1]),
+            [],
+            [],
+        )
+        for i in range(2, len(row) - 1):
+            if i % 2 == 0:
+                loadadd.Si.append(parse_nastran_float(row[i]))
+            else:
+                loadadd.Li.append(parse_nastran_integer(row[i]))
+        i = 1
+        while row[-1] == '+':
+            row = r[i]
+            for i in range(2, len(row) - 1):
+                if i % 2 == 0:
+                    loadadd.Si.append(parse_nastran_float(row[i]))
+                else:
+                    loadadd.Li.append(parse_nastran_integer(row[i]))
+            i += 1
+        out.append(loadadd)
+    return out
+
+
 def parse(data: dict):
     bulk = data['BULK']
     output = dict()
@@ -275,6 +303,8 @@ def parse(data: dict):
             output[key] = parse_pshell(value)
         elif key == "PBARL":
             output[key] = parse_pbarl(value)
+        elif key == "LOADADD":
+            output[key] = parse_loadadd(value)
 
     return output
 
@@ -291,6 +321,22 @@ def print_grid(rows: list[Grid]):
             print_nastran_integer(row.PS),
             '',
             ''
+        ]
+        out.append([o1])
+    return out
+
+def print_mat1(rows: list[Mat1]):
+    out = []
+    for row in rows:
+        o1 = [
+            print_nastran_string_or_integer(row.MID),
+            print_nastran_float(row.E),
+            print_nastran_float(row.G),
+            print_nastran_float(row.NU),
+            print_nastran_float(row.RHO),
+            print_nastran_float(row.A),
+            print_nastran_float(row.TREF),
+            print_nastran_float(row.GE)
         ]
         out.append([o1])
     return out
@@ -403,6 +449,26 @@ def print_pbarl(rows: list[PBarl]):
                 on.append('')
     return out
 
+def print_loadadd(rows: list[LoadAdd]):
+    out = []
+    for row in rows:
+        o1 = [
+            print_nastran_integer(row.SID),
+            print_nastran_float(row.S)
+        ]
+        for i in range(max(len(row.Si), 3)):
+            o1.append(print_nastran_float(row.Si[i]))
+            o1.append(print_nastran_float(row.Li[i]))
+        out.append([o1])
+        for i in range(math.ceil((len(row.Si) - 3) / 4)):
+            o = []
+            for j in range(len(row.Si) - (3 + i*4)):
+                o.append(print_nastran_float(row.Si[3 + i*4 + j]))
+                o.append(print_nastran_float(row.Li[3 + i*4 + j]))
+            out[-1].append(o)
+    return out
+
+
 def print_data(data: dict):
     output = dict()
 
@@ -410,7 +476,7 @@ def print_data(data: dict):
         if key == "GRID":
             output[key] = print_grid(value)
         elif key == "MAT1":
-            pass
+            output[key] = print_mat1(value)
         elif key == "CQUAD4":
             output[key] = print_cquad4(value)
         elif key == "CBAR":
@@ -421,4 +487,6 @@ def print_data(data: dict):
             output[key] = print_pshell(value)
         elif key == "PBARL":
             output[key] = print_pbarl(value)
+        elif key == "LOADADD":
+            output[key] = print_loadadd(value)
     return output

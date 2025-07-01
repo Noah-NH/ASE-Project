@@ -2,7 +2,7 @@ from itertools import chain
 
 LINE_LIMIT = 8
 
-def print_fem(input_data, path_fem_new, sectioned_variable):
+def print_fem(input_data, path_fem_new, sectioned_variable = 0):
     with open(path_fem_new, 'w') as file:
 
         file.write('$$\n')

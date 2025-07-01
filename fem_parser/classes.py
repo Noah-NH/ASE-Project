@@ -186,3 +186,15 @@ class PBarl(object):
             return 4
         else:
             RuntimeError("Not implemented")
+
+class LoadAdd(object):
+    SID: int
+    S: float
+    Si: list[float] = []
+    Li: list[int] = []
+
+    def __init__(self, SID, S, Si, Li):
+        self.SID = SID
+        self.S = S
+        self.Si = Si
+        self.Li = Li

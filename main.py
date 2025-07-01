@@ -1,48 +1,77 @@
 import datareader
 import export
-import argparse
-import shutil
 import os
 from fem_parser import femreader, femparser, geometry, femwriter
 from fem_parser.classes import *
-from tkinter.filedialog import askopenfilename, askdirectory
+from tkinter.filedialog import askdirectory
 
 from classes import *
 
-def copy_and_replace(source_path, destination_path):
-    pass
+def find_input_file():
+    template_dir = askdirectory()
+
+    project_file = ""
+
+    matrikel = input("Matrikel: ")
+    matrikel = matrikel.removeprefix("0")
+
+    for file in os.listdir(template_dir):
+        if file.endswith(f"{matrikel}.csv"):
+            project_file = file
+            break
+
+    if not project_file:
+        print("Matrikel not found")
+        exit(0)
+
+    return template_dir + "/" + project_file
+
+def input_with_default(query, default):
+    return input(f"{query} [{default}]: ").strip() or default
+
+def dimension_input():
+    p1 = float(input_with_default("Thickness panel 1", "4.0"))
+    p2 = float(input_with_default("Thickness panel 2", "4.0"))
+    p3 = float(input_with_default("Thickness panel 3", "4.0"))
+    p4 = float(input_with_default("Thickness panel 4", "4.0"))
+    p5 = float(input_with_default("Thickness panel 5", "4.0"))
+
+    s1 = list(map(float, input_with_default("Stringer 1 Dimensions", "25.0 2.0 20.0 15.0").split(" ")))
+    s2 = list(map(float, input_with_default("Stringer 2 Dimensions", "25.0 2.0 20.0 15.0").split(" ")))
+    s3 = list(map(float, input_with_default("Stringer 3 Dimensions", "25.0 2.0 20.0 15.0").split(" ")))
+    s4 = list(map(float, input_with_default("Stringer 4 Dimensions", "25.0 2.0 20.0 15.0").split(" ")))
+    s5 = list(map(float, input_with_default("Stringer 5 Dimensions", "25.0 2.0 20.0 15.0").split(" ")))
+
+    return [p1, p2, p3, p4, p5, p5, p4, p3, p2, p1], [s1, s2, s3, s4, s5, s4, s3, s2, s1]
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-n', '--nogui', default=False, action='store_true', help="run without GUI", dest='nogui')
-    parser.add_argument('--input', type=str, help='Path to input project csv file')
-    parser.add_argument('--stringer', type=str, help='Path to stringer stress csv file')
-    parser.add_argument('--panel', type=str, help='Path to panel stress csv file')
-    parser.add_argument('--fem', type=str, help='Path to fem file')
+    print("ASE Submission 1.2 Script V2")
+    print("© Noah Heinzel")
 
-    parser.add_argument('--output', type=str, help='Path to output directory')
-    args = parser.parse_args()
-    if not args.nogui:
-        input_file = askopenfilename(title='Choose Input csv', filetypes=[('CSV Files', '*.csv')])
-        fem_file = askopenfilename(title='Choose Input fem', filetypes=[('Optistruct FEM files', '*.fem')])
-    else:
-        if not (args.input and args.stringer and args.panel and args.fem and args.output):
-            parser.error("When using --nogui, the input and output files must be specified")
-        input_file = args.input
-        stringer_file = args.stringer
-        panel_file = args.panel
-        fem_file = args.fem
-        output_dir = args.output
-
+    input_file = find_input_file()
     project = datareader.read_project_data(input_file)
 
     # FEM Preprocessing
 
-    fem = femreader.read_fem(fem_file)
+    fem = femreader.read_fem("Template.fem")
     data = femparser.parse(fem)
 
     materials: list[Mat1] = data["MAT1"]
-    if materials[0].E != project.material.e_modulus: RuntimeWarning("Different E-values detected!")
+    material: Mat1 = materials[0]
+    material.E = project.material.e_modulus
+
+    for loadadd in data["LOADADD"]:
+        if loadadd.SID == 5:
+            loadadd.S = project.scale1
+        elif loadadd.SID == 6:
+            loadadd.S = project.scale2
+        elif loadadd.SID == 7:
+            loadadd.S = project.scale3
+
+    for a in data["LOADADD"]:
+        print(a.S)
+
+    input_dimensions = dimension_input()
 
     grid: list[Grid] = data["GRID"]
 
@@ -57,8 +86,10 @@ if __name__ == '__main__':
     stringer_sections = []
     stringer_dimensions = []
 
-    for prop in shell_properties:
+    for i, prop in enumerate(shell_properties):
+        prop.T = input_dimensions[0][i]
         shell_dimensions.append([prop.T, prop.T / 2])
+        shell_properties[i] = prop
 
     for quad in quads:
         prop = [e for e in shell_properties if e.PID == quad.PID][0]
@@ -79,8 +110,10 @@ if __name__ == '__main__':
 
         quad.ZOFFS = thickness / 2
 
-    for prop in bar_properties:
+    for i, prop in enumerate(bar_properties):
         if prop.TYPE == "HAT":
+            prop.DIMS = input_dimensions[1][i]
+            bar_properties[i] = prop
             section = HatSection(prop.DIMS[0], prop.DIMS[1], prop.DIMS[2], prop.DIMS[3])
             stringer_sections.append(section)
             stringer_dimensions.append([prop.DIMS[0], prop.DIMS[1], prop.DIMS[2], prop.DIMS[3], -section.z_centroid])
@@ -110,6 +143,9 @@ if __name__ == '__main__':
         else:
             RuntimeWarning("Not implemented yet!")
 
+    data["MAT1"] = materials
+    data["PBARL"] = bar_properties
+    data["PSHELL"] = shell_properties
     data["CQUAD4"] = quads
     data["CBAR"] = bars
 
@@ -118,18 +154,7 @@ if __name__ == '__main__':
     for key, value in prn.items():
         fem["BULK"][key] = value
 
-
-    if not args.nogui:
-        analysis_dir = askdirectory(title='Choose Analysis location')
-
-        femwriter.print_fem(fem, f"{analysis_dir}/Output.fem", 0)
-
-        stringer_file = askopenfilename(title='Choose Stringer csv', filetypes=[('CSV Files', '*.csv'), ('all files', '*.*')])
-        panel_file = askopenfilename(title='Choose Panel csv', filetypes=[('CSV Files', '*.csv'), ('all files', '*.*')])
-        output_dir = askdirectory(title='Choose Output location')
-
-    copy_and_replace(panel_file, output_dir + "/Panel.csv")
-    copy_and_replace(stringer_file, output_dir + "/Stringer.csv")
+    femwriter.print_fem(fem, "analysis/Output.fem")
 
     rf_strength = []
     panel_buckling = []
@@ -138,8 +163,8 @@ if __name__ == '__main__':
 
     for i in range(3):
         # Reading data
-        stringer_elements = datareader.read_stringer_data(i+1, stringer_file)
-        panel_elements = datareader.read_panel_data(i+1, panel_file)
+        stringer_elements = datareader.read_stringer_data(i+1, "analysis/Stringer.csv")
+        panel_elements = datareader.read_panel_data(i+1, "analysis/Panel.csv")
 
         # Writing strength RF
         rf_strength.append([el.get_strength_rf(project.material.ultimate_strength) for el in panel_elements] + [el.get_strength_rf(project.material.ultimate_strength) for el in stringer_elements])
@@ -175,4 +200,4 @@ if __name__ == '__main__':
 
         section_properties = [second_moment, r, lamda, lamda_crit]
 
-    export.export(shell_dimensions, stringer_dimensions, mass, rf_strength, panel_buckling, stringer_buckling, section_properties, input_file, output_dir + "/results.csv")
+    export.export(shell_dimensions, stringer_dimensions, mass, rf_strength, panel_buckling, stringer_buckling, section_properties, input_file, "analysis/Result.csv")
