@@ -2,6 +2,7 @@ import datareader
 import export
 import os
 import subprocess
+import configparser
 from sys import platform
 from fem_parser import femreader, femparser, geometry, femwriter
 from fem_parser.classes import *
@@ -9,12 +10,22 @@ from tkinter.filedialog import askdirectory
 
 from classes import *
 
-def find_input_file():
-    template_dir = askdirectory()
+config = configparser.ConfigParser()
+config.read('config.ini')
 
+def find_input_file():
     project_file = ""
 
-    matrikel = input("Matrikel: ")
+    if config.has_section("General"):
+        template_dir = config.get("General", "input_directory")
+        matrikel = input_with_default("Matrikel", config.get("General", "matrikel"))
+    else:
+        template_dir = askdirectory(title="Select directory containing input csv files")
+        config.add_section("General")
+        config.set("General", "input_directory", template_dir)
+        matrikel = input("Matrikel: ")
+
+    config.set("General", "matrikel", matrikel)
     matrikel = matrikel.removeprefix("0")
 
     for file in os.listdir(template_dir):
@@ -32,17 +43,41 @@ def input_with_default(query, default):
     return input(f"{query} [{default}]: ").strip() or default
 
 def dimension_input():
-    p1 = float(input_with_default("Thickness panel 1", "4.0"))
-    p2 = float(input_with_default("Thickness panel 2", "4.0"))
-    p3 = float(input_with_default("Thickness panel 3", "4.0"))
-    p4 = float(input_with_default("Thickness panel 4", "4.0"))
-    p5 = float(input_with_default("Thickness panel 5", "4.0"))
+    if config.has_section("Panels"):
+        panel_defaults = [config.get("Panels", "p1"), config.get("Panels", "p2"), config.get("Panels", "p3"), config.get("Panels", "p4"), config.get("Panels", "p5")]
+    else:
+        config.add_section("Panels")
+        panel_defaults = ["4.0", "4.0", "4.0", "4.0", "4.0"]
 
-    s1 = list(map(float, input_with_default("Stringer 1 Dimensions", "25.0 2.0 20.0 15.0").split(" ")))
-    s2 = list(map(float, input_with_default("Stringer 2 Dimensions", "25.0 2.0 20.0 15.0").split(" ")))
-    s3 = list(map(float, input_with_default("Stringer 3 Dimensions", "25.0 2.0 20.0 15.0").split(" ")))
-    s4 = list(map(float, input_with_default("Stringer 4 Dimensions", "25.0 2.0 20.0 15.0").split(" ")))
-    s5 = list(map(float, input_with_default("Stringer 5 Dimensions", "25.0 2.0 20.0 15.0").split(" ")))
+    if config.has_section("Stringers"):
+        stringer_defaults = [config.get("Stringers", "s1"), config.get("Stringers", "s2"), config.get("Stringers", "s3"), config.get("Stringers", "s4"), config.get("Stringers", "s5")]
+    else:
+        config.add_section("Stringers")
+        stringer_defaults = ["25.0 2.0 20.0 15.0", "25.0 2.0 20.0 15.0", "25.0 2.0 20.0 15.0", "25.0 2.0 20.0 15.0", "25.0 2.0 20.0 15.0"]
+
+    p1 = float(input_with_default("Thickness panel 1", panel_defaults[0]))
+    p2 = float(input_with_default("Thickness panel 2", panel_defaults[1]))
+    p3 = float(input_with_default("Thickness panel 3", panel_defaults[2]))
+    p4 = float(input_with_default("Thickness panel 4", panel_defaults[3]))
+    p5 = float(input_with_default("Thickness panel 5", panel_defaults[4]))
+
+    config.set("Panels", "p1", str(p1))
+    config.set("Panels", "p2", str(p2))
+    config.set("Panels", "p3", str(p3))
+    config.set("Panels", "p4", str(p4))
+    config.set("Panels", "p5", str(p5))
+
+    s1 = list(map(float, input_with_default("Stringer 1 Dimensions", stringer_defaults[0]).split(" ")))
+    s2 = list(map(float, input_with_default("Stringer 2 Dimensions", stringer_defaults[1]).split(" ")))
+    s3 = list(map(float, input_with_default("Stringer 3 Dimensions", stringer_defaults[2]).split(" ")))
+    s4 = list(map(float, input_with_default("Stringer 4 Dimensions", stringer_defaults[3]).split(" ")))
+    s5 = list(map(float, input_with_default("Stringer 5 Dimensions", stringer_defaults[4]).split(" ")))
+
+    config.set("Stringers", "s1", " ".join(str(a) for a in s1))
+    config.set("Stringers", "s2", " ".join(str(a) for a in s2))
+    config.set("Stringers", "s3", " ".join(str(a) for a in s3))
+    config.set("Stringers", "s4", " ".join(str(a) for a in s4))
+    config.set("Stringers", "s5", " ".join(str(a) for a in s5))
 
     return [p1, p2, p3, p4, p5, p5, p4, p3, p2, p1], [s1, s2, s3, s4, s5, s4, s3, s2, s1]
 
@@ -71,6 +106,8 @@ if __name__ == '__main__':
             loadadd.S = project.scale3
 
     input_dimensions = dimension_input()
+
+    config.write(open("config.ini", "w"))
 
     grid: list[Grid] = data["GRID"]
 

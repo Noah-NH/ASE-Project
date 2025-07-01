@@ -64,7 +64,6 @@ def read_project_data(filename) -> Project:
             elif row and row[0] == 'limit model mass (skin and stringer) [kg]':
                 limit_mass = float(row[1])
 
-    print(f'Matrikelnr: {matrikel}')
     print(f'Project of {name} {surname}')
 
     return Project(matrikel, Material(E, B, Yield, Ultimate), Scales[0], Scales[1], Scales[2], limit_mass)
