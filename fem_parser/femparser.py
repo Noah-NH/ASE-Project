@@ -458,13 +458,13 @@ def print_loadadd(rows: list[LoadAdd]):
         ]
         for i in range(max(len(row.Si), 3)):
             o1.append(print_nastran_float(row.Si[i]))
-            o1.append(print_nastran_float(row.Li[i]))
+            o1.append(print_nastran_integer(row.Li[i]))
         out.append([o1])
         for i in range(math.ceil((len(row.Si) - 3) / 4)):
             o = []
             for j in range(len(row.Si) - (3 + i*4)):
                 o.append(print_nastran_float(row.Si[3 + i*4 + j]))
-                o.append(print_nastran_float(row.Li[3 + i*4 + j]))
+                o.append(print_nastran_integer(row.Li[3 + i*4 + j]))
             out[-1].append(o)
     return out
 

@@ -4,7 +4,12 @@ import os
 from pathlib import Path
 from tkinter.filedialog import askdirectory
 
-template_tcl = f'''*templatefileset "C:/Program Files/Altair/2023.1/hwdesktop/templates/feoutput/optistruct/optistruct"
+install_dir = askdirectory(title="Select Hypermesh installation directory")
+if not "hwdesktop" in os.listdir(install_dir):
+    print("Hyperworks not found at specified install directory")
+    exit(1)
+
+template_tcl = f'''*templatefileset "{install_dir.replace('\\', '/')}/hwdesktop/templates/feoutput/optistruct/optistruct"
 *createstringarray 10 "OptiStruct " " " "ANSA " "PATRAN " "EXPAND_IDS_FOR_FORMULA_SETS "  "ASSIGNPROP_BYHMCOMMENTS" "LOADCOLS_DISPLAY_SKIP " "VECTORCOLS_DISPLAY_SKIP "  "SYSTCOLS_DISPLAY_SKIP " "CONTACTSURF_DISPLAY_SKIP " 
 *feinputwithdata2 "#optistruct\\\\optistruct" "{os.path.abspath('./analysis/Output.fem').replace('\\', '/')}" 0 0 0 0 0 1 10 1 0 
 *createentity results
@@ -44,6 +49,17 @@ template_xml = f'''<root>
 </root>
 '''
 
+template = f'''del Stringer.csv
+del Panel.csv
+call "{install_dir}/hwsolvers/scripts/optistruct" analysis/Output.fem
+del Output.out
+del Output.stat
+del hwsolver.mesg
+call "{install_dir}/hwdesktop/hm/bin/win64/hmbatch" -tcl analysis/query.tcl
+del optistruct.msg
+del command1.tcl
+'''
+
 def install_dependencies():
     subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
 
@@ -55,21 +71,6 @@ def write_export_scripts():
         file.write(template_xml)
 
 def write_bat():
-    install_dir = askdirectory(title="Select Hypermesh installation directory")
-    if not "hwdesktop" in os.listdir(install_dir):
-        print("Hyperworks not found at specified install directory")
-        exit(1)
-
-    template = f'''del Stringer.csv
-del Panel.csv
-call "{install_dir}/hwsolvers/scripts/optistruct" Output.fem
-del Output.out
-del Output.stat
-del hwsolver.mesg
-call "{install_dir}/hwdesktop/hm/bin/win64/hmbatch" -tcl queryconfig.tcl
-del optistruct.msg
-del command1.tcl
-    '''
     with open("solve.bat", "w") as file:
         file.write(template)
 
