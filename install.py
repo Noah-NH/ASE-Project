@@ -49,11 +49,11 @@ template_xml = f'''<root>
 </root>
 '''
 
-template = f'''del analysis/Stringer.csv
-del analysis/Panel.csv
+template = f'''del analysis\\Stringer.csv
+del analysis\\Panel.csv
 call "{install_dir}/hwsolvers/scripts/optistruct" analysis/Output.fem
-del analysis/Output.out
-del analysis/Output.stat
+del analysis\\Output.out
+del analysis\\Output.stat
 del hwsolver.mesg
 call "{install_dir}/hwdesktop/hm/bin/win64/hmbatch" -tcl analysis/query.tcl
 del optistruct.msg
