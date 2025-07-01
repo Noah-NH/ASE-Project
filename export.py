@@ -61,10 +61,10 @@ def export(shell_dimension: list[list[float]], stringer_dimension: list[list[flo
             row[13] = str(stringer_buckling[2][2][i - 107])
 
         elif i in range(115, 120):
-            row[1] = str(section_properties[0][i - 114])
-            row[2] = str(section_properties[1][i - 114])
-            row[3] = str(section_properties[2][i - 114])
-            row[4] = str(section_properties[3][i - 114])
+            row[1] = str(section_properties[0][i - 115])
+            row[2] = str(section_properties[1][i - 115])
+            row[3] = str(section_properties[2][i - 115])
+            row[4] = str(section_properties[3][i - 115])
 
     with open(file_out, 'w', encoding="utf-8", newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=';', quotechar='|')
