@@ -28,7 +28,9 @@ def read_stringer_data(loadcase: int, filename) -> list[OneDElement]:
     return data
 
 def read_project_data(filename) -> Project:
-    matrikel = None,
+    matrikel = None
+    name = ""
+    surname = ""
     E = 0
     B = 0
     Yield = 0
@@ -41,6 +43,10 @@ def read_project_data(filename) -> Project:
         for row in reader:
             if row and row[0] == 'matrikelnr':
                 matrikel = int(row[1])
+            elif row and row[0] == 'name':
+                name = row[1]
+            elif row and row[0] == 'surname':
+                surname = row[1]
             elif row and row[0] == 'E-modulus_avg':
                 E = float(row[1])
             elif row and row[0] == 'E-modulus_B-basis':
@@ -59,5 +65,6 @@ def read_project_data(filename) -> Project:
                 limit_mass = float(row[1])
 
     print(f'Matrikelnr: {matrikel}')
+    print(f'Project of {name} {surname}')
 
     return Project(matrikel, Material(E, B, Yield, Ultimate), Scales[0], Scales[1], Scales[2], limit_mass)

@@ -1,6 +1,8 @@
 import datareader
 import export
 import os
+import subprocess
+from sys import platform
 from fem_parser import femreader, femparser, geometry, femwriter
 from fem_parser.classes import *
 from tkinter.filedialog import askdirectory
@@ -67,9 +69,6 @@ if __name__ == '__main__':
             loadadd.S = project.scale2
         elif loadadd.SID == 7:
             loadadd.S = project.scale3
-
-    for a in data["LOADADD"]:
-        print(a.S)
 
     input_dimensions = dimension_input()
 
@@ -155,6 +154,14 @@ if __name__ == '__main__':
         fem["BULK"][key] = value
 
     femwriter.print_fem(fem, "analysis/Output.fem")
+
+    # Analysis
+
+    if platform == "win32":
+        print("Running solver")
+        subprocess.run(["solve.bat"], shell=True)
+    else:
+        input("Run solver and press ENTER to continue...")
 
     rf_strength = []
     panel_buckling = []
