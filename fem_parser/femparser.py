@@ -38,7 +38,12 @@ def print_nastran_float(value: float, field_width: int = 8) -> str:
 
     # Try fixed-point formatting first
     for decimals in range(7, -1, -1):
-        fixed_str = f"{value:.{decimals}f}"
+        fixed_val = round(value, decimals)
+        # If rounding to zero, skip this format
+        if fixed_val == 0.0:
+            continue
+
+        fixed_str = f"{fixed_val:.{decimals}f}"
         if '.' in fixed_str:
             int_part, dec_part = fixed_str.split('.')
             dec_part = dec_part.rstrip('0')
