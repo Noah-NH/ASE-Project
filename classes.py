@@ -307,7 +307,8 @@ class CombinedSection(CrossSection):
         return np.abs(crip - np.square(crip * self.get_lambda() / (2 * np.pi)) / self.material.b_basis)
 
     def get_sigma_critical(self):
-        return min(self.get_sigma_crip(), self.get_sigma_euler(), self.get_sigma_euler_johnson())
+        sigma = self.get_sigma_euler() if self.get_lambda() > self.get_lambda_critical() else self.get_sigma_euler_johnson()
+        return min(self.get_sigma_crip(), sigma)
 
     def get_buckling_rf(self, SF=1.5):
         return np.abs(self.get_sigma_critical() / (SF * self.get_axial_stress()))
