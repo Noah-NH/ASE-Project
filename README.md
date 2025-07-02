@@ -7,7 +7,7 @@ This is the branch for the second submission of part 1
 - Hypermesh 2023.1
 
 ### How to use it
-1. Run ```install.py```
+1. Run ```install.py``` and select the ```2023.1``` folder of your Hypermesh installation
 2. Run ```main.py```
 3. Select folder containing all template csv files
 4. Enter matrikel number
