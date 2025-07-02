@@ -3,6 +3,8 @@ import export
 import os
 import subprocess
 import configparser
+import shutil
+from pathlib import Path
 from sys import platform
 from fem_parser import femreader, femparser, geometry, femwriter
 from fem_parser.classes import *
@@ -12,6 +14,18 @@ from classes import *
 
 config = configparser.ConfigParser()
 config.read('config.ini')
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    WHITE_ON_GREEN = '\x1b[6;30;42m'
 
 def find_input_file():
     project_file = ""
@@ -82,6 +96,7 @@ def dimension_input():
     return [p1, p2, p3, p4, p5, p5, p4, p3, p2, p1], [s1, s2, s3, s4, s5, s4, s3, s2, s1]
 
 if __name__ == '__main__':
+    success = True
     print("ASE Submission 1.2 Script V2")
     print("© Noah Heinzel")
 
@@ -212,6 +227,10 @@ if __name__ == '__main__':
 
         # Writing strength RF
         rf_strength.append([el.get_strength_rf(project.material.ultimate_strength) for el in panel_elements] + [el.get_strength_rf(project.material.ultimate_strength) for el in stringer_elements])
+        for j, rf in enumerate(rf_strength[i]):
+            if rf < 1:
+                print(f"Element {j + 1} LC: {i + 1} RF Strength: {bcolors.FAIL + str(rf) + bcolors.ENDC}")
+                success = False
 
         # Averaging elements
         stringers = Stringer.get_stringers(stringer_elements, project.material, stringer_sections)
@@ -225,14 +244,26 @@ if __name__ == '__main__':
         xy = [p.xy for p in panels]
         k_shear = [p.get_k_shear() for p in panels]
         k_biax = [p.get_k_biax() for p in panels]
-        rf_panel_buckling = [p.get_buckling_rf() for p in panels]
+        rf_panel_buckling = []
+        for p in panels:
+            rf = p.get_buckling_rf()
+            if rf < 1:
+                print(f"Panel {p.id + 1} LC: {i+1} RF: {bcolors.FAIL + str(rf) + bcolors.ENDC}")
+                success = False
+            rf_panel_buckling.append(rf)
 
         panel_buckling.append([xx, yy, xy, k_shear, k_biax, rf_panel_buckling])
 
         # Stringer buckling
         axial = [s.get_axial_stress() for s in sections]
         crip = [s.get_sigma_crip() for s in sections]
-        rf_column_buckling = [s.get_buckling_rf() for s in sections]
+        rf_column_buckling = []
+        for s in sections:
+            rf = s.get_buckling_rf()
+            if rf < 1:
+                print(f"Stringer {s.id + 1} LC: {i+1} RF: {bcolors.FAIL + str(rf) + bcolors.ENDC}")
+                success = False
+            rf_column_buckling.append(rf)
 
         stringer_buckling.append([axial, crip, rf_column_buckling])
 
@@ -245,3 +276,13 @@ if __name__ == '__main__':
         section_properties = [second_moment, r, lamda, lamda_crit]
 
     export.export(shell_dimensions, stringer_dimensions, mass, rf_strength, panel_buckling, stringer_buckling, section_properties, input_file, "analysis/Result.csv")
+    if success:
+        print(bcolors.OKGREEN + "All reserve factors are valid" + bcolors.ENDC)
+        print("Submission files can be found in submission folder")
+        Path("./submission").mkdir(parents=True, exist_ok=True)
+        shutil.copy2("analysis/Result.csv", f"submission/ASE_Project2025_redesign_{project.matrikel}.csv")
+        shutil.copy2("analysis/Output.fem", f"submission/ASE_Project2025_SuperPanel_redesign_{project.matrikel}.fem")
+    else:
+        print(bcolors.FAIL + "Some reserve factors are too low" + bcolors.ENDC)
+
+    input("Press ENTER to close...")
