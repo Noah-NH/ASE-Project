@@ -45,6 +45,26 @@ class Mat1(object):
         self.SC = SC
         self.SS = SS
 
+class Mat8(object):
+    MID: int
+    E1: float
+    E2: float
+    NU12: float
+    G12: float
+    G1Z: float
+    G2Z: float
+    RHO: float
+
+    def __init__(self, MID, E1, E2, NU12, G12, G1Z, G2Z, RHO):
+        self.MID = MID
+        self.E1 = E1
+        self.E2 = E2
+        self.NU12 = NU12
+        self.G12 = G12
+        self.G1Z = G1Z
+        self.G2Z = G2Z
+        self.RHO = RHO
+
 class CQuad4(object):
     EID: int
     PID: str | int
@@ -184,8 +204,44 @@ class PBarl(object):
     def num_dims(type):
         if type == "HAT":
             return 4
+        elif type == "T":
+            return 4
         else:
             RuntimeError("Not implemented")
+
+class Ply(object):
+    MID: str | int
+    Ti: float
+    THETAi: float
+    SOUTi: str
+
+    def __init__(self, MID, Ti, THETAi, SOUTi):
+        self.MID = MID
+        self.Ti = Ti
+        self.THETAi = THETAi
+        self.SOUTi = SOUTi
+
+class PComp(object):
+    PID: str | int
+    Z0: float
+    NSM: float
+    SB: float
+    FT: str
+    TREF: float
+    GE: float
+    LAM: str
+    PLIES: list[Ply]
+
+    def __init__(self, PID, Z0, NSM, SB, FT, TREF, GE, LAM):
+        self.PID = PID
+        self.Z0 = Z0
+        self.NSM = NSM
+        self.SB = SB
+        self.FT = FT
+        self.TREF = TREF
+        self.GE = GE
+        self.LAM = LAM
+        self.PLIES = []
 
 class LoadAdd(object):
     SID: int

@@ -157,7 +157,6 @@ def read_fem(filename):
         text_lines = file.readlines()
 
         (text_lines, text_lines_char, pos_endbulk, pos_beginbulk) = read_bulk_cleanuptext(text_lines, line_limit)
-
         output = dict()
         output['SUBCASE'] = []
 
@@ -170,7 +169,7 @@ def read_fem(filename):
                 output['SUBCASE'][i] = {name: value}
 
         subcase_trigger = 0
-        io_count = 0
+        output['IO'] = []
 
         # Process INPUTIO, SUBCASES and OBJECTIVES
         for jiu in range(pos_beginbulk):
@@ -180,8 +179,7 @@ def read_fem(filename):
                 subcase_trigger += 1
 
             if subcase_trigger == 0 or text.startswith('DESOBJ('):
-                io_count += 1
-                output['IO'] = [text.strip()]
+                output['IO'].append(text.strip())
 
             # SUBCASE DATA ENTRIES
             if subcase_trigger != 0 and not (text.startswith('SUBCASE') or text.startswith(' SUBCASE')):

@@ -16,7 +16,8 @@ template_tcl = f'''*templatefileset "{install_dir.replace('\\', '/')}/hwdesktop/
 set resultid [hm_latestentityid results]
 *setvalue results id=$resultid resultfiles="{os.path.abspath('./analysis/Output.h3d').replace('\\', '/')}"
 *setvalue results id=$resultid init=1
-hm_getresults id=$resultid xml="{os.path.abspath('./analysis/queryconfig.xml').replace('\\', '/')}"zz
+hm_getresults id=$resultid xml="{os.path.abspath('./analysis/queryconfig.xml').replace('\\', '/')}"
+hm_getresults id=$resultid dataname=dispose
 '''
 
 template_xml = f'''<root>
@@ -30,12 +31,56 @@ template_xml = f'''<root>
 			<loadcase id="2" stepindex="0"/>
 			<loadcase id="3" stepindex="0"/>
 		</hierarchy>
+		<result type="Composite Stresses:Normal X Stress" components="" system="" layers="Ply  1,Ply  2,Ply  11,Ply  12,Ply  13,Ply  14,Ply  15,Ply  16,Ply  3,Ply  4,Ply  5,Ply  6,Ply  7,Ply  8,Ply  9,Ply  10," corner="" averaging=""/>
+		<entity type="Elements" selectionmode="All" selectionlist=""/>
+		<sort by="By ID Increasing" type="By Load Case"/>
+		<output file="{os.path.abspath('./analysis/Comp-XX.csv').replace('\\', '/')}" complexfilter="" format="Textfile"/>
+	</query>
+	<query id="2" type="Report">
+		<hierarchy tag="f2">
+			<loadcase id="1" stepindex="0"/>
+			<loadcase id="2" stepindex="0"/>
+			<loadcase id="3" stepindex="0"/>
+		</hierarchy>
+		<result type="Composite Stresses:Normal Y Stress" components="" system="" layers="Ply  1,Ply  2,Ply  11,Ply  12,Ply  13,Ply  14,Ply  15,Ply  16,Ply  3,Ply  4,Ply  5,Ply  6,Ply  7,Ply  8,Ply  9,Ply  10," corner="" averaging=""/>
+		<entity type="Elements" selectionmode="All" selectionlist=""/>
+		<sort by="By ID Increasing" type="By Load Case"/>
+		<output file="{os.path.abspath('./analysis/Comp-YY.csv').replace('\\', '/')}" complexfilter="" format="Textfile"/>
+	</query>
+	<query id="3" type="Report">
+		<hierarchy tag="f2">
+			<loadcase id="1" stepindex="0"/>
+			<loadcase id="2" stepindex="0"/>
+			<loadcase id="3" stepindex="0"/>
+		</hierarchy>
+		<result type="Composite Stresses:Shear XY Stress" components="" system="" layers="Ply  1,Ply  2,Ply  11,Ply  12,Ply  13,Ply  14,Ply  15,Ply  16,Ply  3,Ply  4,Ply  5,Ply  6,Ply  7,Ply  8,Ply  9,Ply  10," corner="" averaging=""/>
+		<entity type="Elements" selectionmode="All" selectionlist=""/>
+		<sort by="By ID Increasing" type="By Load Case"/>
+		<output file="{os.path.abspath('./analysis/Comp-XY.csv').replace('\\', '/')}" complexfilter="" format="Textfile"/>
+	</query>
+	<query id="4" type="Report">
+		<hierarchy tag="f2">
+			<loadcase id="1" stepindex="0"/>
+			<loadcase id="2" stepindex="0"/>
+			<loadcase id="3" stepindex="0"/>
+		</hierarchy>
+		<result type="Element Strains (1D):CBAR/CBEAM Axial Strain" components="" system="" layers="" corner="" averaging=""/>
+		<entity type="Elements" selectionmode="All" selectionlist=""/>
+		<sort by="By ID Increasing" type="By Load Case"/>
+		<output file="{os.path.abspath('./analysis/Stringer-Strain.csv').replace('\\', '/')}" complexfilter="" format="Textfile"/>
+	</query>
+	<query id="5" type="Report">
+		<hierarchy tag="f2">
+			<loadcase id="1" stepindex="0"/>
+			<loadcase id="2" stepindex="0"/>
+			<loadcase id="3" stepindex="0"/>
+		</hierarchy>
 		<result type="Element Stresses (2D &amp; 3D)" components="XX XY YY " system="" layers="Mid," corner="" averaging=""/>
 		<entity type="Elements" selectionmode="All" selectionlist=""/>
 		<sort by="By ID Increasing" type="By Load Case"/>
-		<output file="{os.path.abspath('./analysis/Panel.csv').replace('\\', '/')}" complexfilter="" format="Textfile"/>
+		<output file="{os.path.abspath('./analysis/Panel-Stress.csv').replace('\\', '/')}" complexfilter="" format="Textfile"/>
 	</query>
-	<query id="2" type="Report">
+	<query id="6" type="Report">
 		<hierarchy tag="f2">
 			<loadcase id="1" stepindex="0"/>
 			<loadcase id="2" stepindex="0"/>
@@ -44,7 +89,7 @@ template_xml = f'''<root>
 		<result type="Element Stresses (1D):CBAR/CBEAM Axial Stress" components="" system="" layers="" corner="" averaging=""/>
 		<entity type="Elements" selectionmode="All" selectionlist=""/>
 		<sort by="By ID Increasing" type="By Load Case"/>
-		<output file="{os.path.abspath('./analysis/Stringer.csv').replace('\\', '/')}" complexfilter="" format="Textfile"/>
+		<output file="{os.path.abspath('./analysis/Stringer-Stress.csv').replace('\\', '/')}" complexfilter="" format="Textfile"/>
 	</query>
 </root>
 '''

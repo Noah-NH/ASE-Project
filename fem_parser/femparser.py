@@ -145,6 +145,23 @@ def parse_mat1(rows):
         out.append(mat1)
     return out
 
+def parse_mat8(rows):
+    out = []
+    for r in rows:
+        row = r[0]
+        mat8 = Mat8(
+            parse_nastran_string_or_interger(row[0]),
+            parse_nastran_float(row[1]),
+            parse_nastran_float(row[2]),
+            parse_nastran_float(row[3]),
+            parse_nastran_float(row[4]),
+            parse_nastran_float(row[5]),
+            parse_nastran_float(row[6]),
+            parse_nastran_float(row[7])
+        )
+        out.append(mat8)
+    return out
+
 def parse_cquad4(rows):
     out = []
     for r in rows:
@@ -261,6 +278,41 @@ def parse_pbarl(rows):
         out.append(pbarl)
     return out
 
+def parse_pcomp(rows):
+    out = []
+    for r in rows:
+        row = r[0]
+        pcomp = PComp(
+            parse_nastran_string_or_interger(row[0]),
+            parse_nastran_float(row[1]),
+            parse_nastran_float(row[2]),
+            parse_nastran_float(row[3]),
+            row[4],
+            parse_nastran_float(row[5]),
+            parse_nastran_float(row[6]),
+            row[7]
+        )
+        while row[-1] == '+':
+            row = r[len(pcomp.PLIES) % 2 + 1]
+            p1 = Ply(
+                parse_nastran_string_or_interger(row[0]),
+                parse_nastran_float(row[1]),
+                parse_nastran_float(row[2]),
+                row[3]
+            )
+            pcomp.PLIES.append(p1)
+            if row[4]:
+                p2 = Ply(
+                    parse_nastran_string_or_interger(row[4]),
+                    parse_nastran_float(row[5]),
+                    parse_nastran_float(row[6]),
+                    row[7]
+                )
+                pcomp.PLIES.append(p2)
+            # TODO
+        out.append(pcomp)
+    return out
+
 def parse_loadadd(rows):
     out = []
     for r in rows:
@@ -298,6 +350,8 @@ def parse(data: dict):
             output[key] = parse_grid(value)
         elif key == "MAT1":
             output[key] = parse_mat1(value)
+        elif key == "MAT8":
+            output[key] = parse_mat8(value)
         elif key == "CQUAD4":
             output[key] = parse_cquad4(value)
         elif key == "CBAR":
@@ -308,6 +362,8 @@ def parse(data: dict):
             output[key] = parse_pshell(value)
         elif key == "PBARL":
             output[key] = parse_pbarl(value)
+        elif key == "PCOMP":
+            output[key] = parse_pcomp(value)
         elif key == "LOADADD":
             output[key] = parse_loadadd(value)
 
@@ -342,6 +398,22 @@ def print_mat1(rows: list[Mat1]):
             print_nastran_float(row.A),
             print_nastran_float(row.TREF),
             print_nastran_float(row.GE)
+        ]
+        out.append([o1])
+    return out
+
+def print_mat8(rows: list[Mat8]):
+    out = []
+    for row in rows:
+        o1 = [
+            print_nastran_string_or_integer(row.MID),
+            print_nastran_float(row.E1),
+            print_nastran_float(row.E2),
+            print_nastran_float(row.NU12),
+            print_nastran_float(row.G12),
+            print_nastran_float(row.G1Z),
+            print_nastran_float(row.G2Z),
+            print_nastran_float(row.RHO)
         ]
         out.append([o1])
     return out
@@ -454,6 +526,38 @@ def print_pbarl(rows: list[PBarl]):
                 on.append('')
     return out
 
+def print_pcomp(rows: list[PComp]):
+    out = []
+    for row in rows:
+        o1 = [
+            print_nastran_string_or_integer(row.PID),
+            print_nastran_float(row.Z0),
+            print_nastran_float(row.NSM),
+            print_nastran_float(row.SB),
+            row.FT,
+            print_nastran_float(row.TREF),
+            print_nastran_float(row.GE),
+            row.LAM,
+            '+'
+        ]
+        out.append([o1])
+        for i in range(math.ceil(len(row.PLIES) / 2)):
+            on = [
+                print_nastran_string_or_integer(row.PLIES[i * 2].MID),
+                print_nastran_float(row.PLIES[i * 2].Ti),
+                print_nastran_float(row.PLIES[i * 2].THETAi),
+                row.PLIES[i * 2].SOUTi
+            ]
+            if i * 2 + 1 <= len(row.PLIES):
+                on += [
+                    print_nastran_string_or_integer(row.PLIES[i * 2 + 1].MID),
+                    print_nastran_float(row.PLIES[i * 2 + 1].Ti),
+                    print_nastran_float(row.PLIES[i * 2 + 1].THETAi),
+                    row.PLIES[i * 2 + 1].SOUTi
+                ]
+            out[-1].append(on)
+    return out
+
 def print_loadadd(rows: list[LoadAdd]):
     out = []
     for row in rows:
@@ -482,6 +586,8 @@ def print_data(data: dict):
             output[key] = print_grid(value)
         elif key == "MAT1":
             output[key] = print_mat1(value)
+        elif key == "MAT8":
+            output[key] = print_mat8(value)
         elif key == "CQUAD4":
             output[key] = print_cquad4(value)
         elif key == "CBAR":
