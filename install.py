@@ -94,8 +94,12 @@ template_xml = f'''<root>
 </root>
 '''
 
-template = f'''del analysis\\Stringer.csv
-del analysis\\Panel.csv
+template = f'''del analysis\\Stringer-Stress.csv
+del analysis\\Stringer-Strain.csv
+del analysis\\Comp-XX.csv
+del analysis\\Comp-XY.csv
+del analysis\\Comp-YY.csv
+del analysis\\Panel-Stress.csv
 call "{install_dir}/hwsolvers/scripts/optistruct" analysis/Output.fem
 del analysis\\Output.out
 del analysis\\Output.stat

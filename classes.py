@@ -453,6 +453,10 @@ class CombinedSection(CrossSection):
     panel1: Panel
     panel2: Panel
     bending_stiffness: float
+    Eyb1: float
+    Eyb2: float
+    Eyb3: float
+    Eyb4: float
 
     def compute_properties(self):
         b3 = self.panel1.len_y
@@ -470,10 +474,10 @@ class CombinedSection(CrossSection):
         E3 = self.panel1.elements[0].get_E_x(False)
         E4 = self.panel2.elements[0].get_E_x(False)
 
-        Eyb1 = self.stringer.section.elements[0].E_b_y
-        Eyb2 = self.stringer.section.elements[1].E_b_y
-        Eyb3 = self.panel1.elements[0].get_E_b_x(False)
-        Eyb4 = self.panel2.elements[0].get_E_b_x(False)
+        self.Eyb1 = self.stringer.section.elements[0].E_b_y
+        self.Eyb2 = self.stringer.section.elements[1].E_b_y
+        self.Eyb3 = self.panel1.elements[0].get_E_b_x(False)
+        self.Eyb4 = self.panel2.elements[0].get_E_b_x(False)
 
         self.area = a1 + a2 + a3 + a4
 
@@ -498,7 +502,7 @@ class CombinedSection(CrossSection):
 
         self.second_moment_area = i1 + s1 + i2 + s2 + i3 + s3 + i4 + s4
 
-        self.bending_stiffness = Eyb1 * i1 + E1 * s1 + Eyb2 * i2 + E2 * s2 + Eyb3 * i3 + E3 * s3 + Eyb4 * i4 + E4 * s4
+        self.bending_stiffness = self.Eyb1 * i1 + E1 * s1 + self.Eyb2 * i2 + E2 * s2 + self.Eyb3 * i3 + E3 * s3 + self.Eyb4 * i4 + E4 * s4
 
         self.E_b_y = self.bending_stiffness / self.second_moment_area
 
@@ -549,7 +553,7 @@ class CombinedSection(CrossSection):
             return
         out: list[CombinedSection] = []
         for i in range(len(stringers)):
-            out.append(CombinedSection(stringers[i], panels[2 * i], panels[2*i + 1]))
+            out.append(CombinedSection(stringers[i], panels[2*i + 1], panels[2*i + 2]))
         return out
 
 class Project(object):

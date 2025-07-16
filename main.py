@@ -148,6 +148,10 @@ if __name__ == '__main__':
 
         sections = CombinedSection.get_combined_sections(stringers, panels)
 
+        panels = Panel.get_panels(list(panel_composite_elements.values()), 6)
+        for p in panels:
+            p.len_y = 400
+
         # Panel buckling
         xx = [p.xx for p in panels]
         yy = [p.yy for p in panels]
@@ -164,7 +168,7 @@ if __name__ == '__main__':
         rf_column_buckling = [s.get_buckling_rf() for s in sections]
         stringer_buckling.append([axial, crip, rf_column_buckling])
 
-    section_properties = [flange_stack.get_E_b_x(False) * 0.9, web_stack.get_E_b_x(True) * 0.9, panel_stack.get_E_b_x(False) * 0.9, panel_stack.get_E_b_x(False) * 0.9, sections[0].z_EC, sections[0].bending_stiffness * 0.9, sections[0].get_radius_gyration(), sections[0].get_lambda(), sections[0].get_lambda_critical()]
+    section_properties = [sections[0].Eyb1 * 0.9, sections[0].Eyb2 * 0.9, sections[0].Eyb3 * 0.9, sections[0].Eyb4 * 0.9, sections[0].z_EC, sections[0].bending_stiffness * 0.9, sections[0].get_radius_gyration(), sections[0].get_lambda(), sections[0].get_lambda_critical()]
 
     Path("./submission").mkdir(parents=True, exist_ok=True)
     export.export(flange_stack.get_A(), flange_stack.get_B(), flange_stack.get_D(), rf_strength, panel_buckling, stringer_buckling, section_properties, input_file, f"submission/ASE_Project2025_{project.matrikel}.csv")
