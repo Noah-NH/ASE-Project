@@ -406,14 +406,10 @@ class CompositeTSection(CrossSection):
         self.compute_properties()
 
     def get_sigma_crip(self):
-        a11 = self.dim1 / 2
-        a12 = self.dim2
-        t1 = self.dim3
+        b2 = self.dim2 - self.dim3
         t2 = self.dim4
 
-        b12 = a12 - t1/2 * (2 - 0.5 * t2/t1)
-
-        return 650 * 1.63 / np.power(b12/t2, 0.717)
+        return 650 * 1.63 / np.power(b2/t2, 0.717)
 
 class OneDElement(object):
     id: int
