@@ -255,6 +255,9 @@ class CompositeElement(object):
             plies.append(Ply(material, angle, ply_thickness))
         return CompositeElement(id, plies)
 
+    def __str__(self):
+        return f'ID: {self.id}, XX: {self.stress_x}, YY: {self.stress_y}, XY: {self.stress_xy}'
+
 class Panel(object):
     id: int
     xx: float = 0
@@ -318,7 +321,7 @@ class Panel(object):
             return
         out = []
         for i in range(len(elements) // bin_size):
-            out.append(Panel(elements[i*3:i*3+bin_size], i, 8.832))
+            out.append(Panel(elements[i*bin_size:i*bin_size+bin_size], i, 8.832))
         return out
 
     def __str__(self):

@@ -8,7 +8,7 @@ import configparser
 import shutil
 from pathlib import Path
 from sys import platform
-from fem_parser import femreader, femparser, geometry, femwriter
+from fem_parser import femreader, femparser, femwriter
 from fem_parser.classes import *
 from tkinter.filedialog import askdirectory
 
@@ -16,18 +16,6 @@ from classes import *
 
 config = configparser.ConfigParser()
 config.read('config.ini')
-
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    WHITE_ON_GREEN = '\x1b[6;30;42m'
 
 def find_input_file():
     project_file = ""
