@@ -477,10 +477,10 @@ class CombinedSection(CrossSection):
 
         self.area = a1 + a2 + a3 + a4
 
-        zc1 = self.stringer.section.elements[0].z_EC
-        zc2 = self.stringer.section.elements[1].z_EC
-        zc3 = -self.panel1.thickness / 2
-        zc4 = -self.panel2.thickness / 2
+        zc1 = -self.stringer.section.elements[0].z_EC
+        zc2 = -self.stringer.section.elements[1].z_EC
+        zc3 = self.panel1.thickness / 2
+        zc4 = self.panel2.thickness / 2
 
         self.E_x = (a3 * E3 + a4 * E4 + self.stringer.section.area * self.stringer.section.E_x) / self.area
 
